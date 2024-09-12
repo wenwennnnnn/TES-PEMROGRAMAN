@@ -1,0 +1,92 @@
+import json
+from datetime import datetime
+import sympy
+from google.colab import files
+
+# untuk Unggah file JSON 
+uploaded = files.upload()
+
+# Membaca file JSON yang diunggah
+with open('data.json') as f:
+    data = json.load(f)
+
+# Fungsi untuk mengklasifikasikan siswa ke dalam kelas
+def klasifikasi_siswa(nama_list, nilai_list):
+    kelas = {
+        "Kelas 1": [],
+        "Kelas 2": [],
+        "Kelas 3": [],
+        "Kelas 4": [],
+        "Kelas 5": [],
+        "Kelas Khusus": []  # Untuk siswa yang namanya mengandung huruf 'C' dan 'O'
+    }
+    
+    for nama, nilai in zip(nama_list, nilai_list):
+        siswa = {'name': nama, 'nilai': nilai}
+        
+        # Masukkan siswa ke kelas khusus jika namanya mengandung huruf 'C' dan 'O'
+        if 'C' in nama.upper() and 'O' in nama.upper():
+            kelas["Kelas Khusus"].append(siswa)
+        else:
+            # Klasifikasi siswa berdasarkan nilai puluhan
+            if 90 <= nilai <= 100:
+                kelas["Kelas 1"].append(siswa)
+            elif 80 <= nilai < 90:
+                kelas["Kelas 2"].append(siswa)
+            elif 70 <= nilai < 80:
+                kelas["Kelas 3"].append(siswa)
+            elif 60 <= nilai < 70:
+                kelas["Kelas 4"].append(siswa)
+            elif 0 <= nilai < 60:
+                kelas["Kelas 5"].append(siswa)
+    
+    return kelas
+
+# Fungsi untuk mengecek apakah siswa akan menikah tahun depan
+def cek_menikah(nilai):
+    return nilai % 7 == 0
+
+# Fungsi untuk mengecek apakah siswa akan mati di bulan ini berdasarkan nilai bilangan prima
+def cek_mati(nilai):
+    return sympy.isprime(nilai) and (nilai % 10 == datetime.now().month)
+
+# Fungsi untuk menampilkan detail setiap kelas beserta jumlah siswa yang akan menikah atau mati
+def tampilkan_data(kelas):
+    total_menikah = 0
+    total_mati = 0
+
+    for key, siswa_list in kelas.items():
+        print(f"\n{key}:")
+        if siswa_list:
+            for siswa in siswa_list:
+                nama = siswa['name']
+                nilai = siswa['nilai']
+                menikah = cek_menikah(nilai)
+                mati = cek_mati(nilai)
+                
+                if menikah:
+                    print(f"Siswa {nama} dengan nilai {nilai} akan menikah tahun depan.")
+                    total_menikah += 1
+                
+                if mati:
+                    print(f"Siswa {nama} dengan nilai {nilai} akan mati di bulan ini.")
+                    total_mati += 1
+        else:
+            print("Tidak ada siswa di kelas ini.")
+    
+    print(f"\nTotal siswa yang akan menikah tahun depan: {total_menikah}")
+    print(f"Total siswa yang akan mati di bulan ini: {total_mati}")
+
+# Ambil daftar siswa dan nilai dari data JSON
+nama_list = data.get('listNama', [])
+nilai_list = data.get('listNilai', [])
+
+# Cek jika panjang nama_list dan nilai_list sesuai
+if len(nama_list) != len(nilai_list):
+    raise ValueError("Data nama dan nilai tidak sesuai jumlahnya")
+
+# Klasifikasikan siswa ke dalam kelas
+kelas_siswa = klasifikasi_siswa(nama_list, nilai_list)
+
+# Tampilkan data detail setiap kelas beserta jumlah siswa yang akan mati dan menikah
+tampilkan_data(kelas_siswa)
